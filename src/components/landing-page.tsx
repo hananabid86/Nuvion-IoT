@@ -135,7 +135,7 @@ export function LandingPage() {
               <div className="container flex h-16 items-center justify-between">
                   <Link href="/" className="flex items-center gap-2 font-bold text-lg">
                       <Rss className="h-7 w-7 text-primary" />
-                      <span>Nuvion IoT</span>
+                      <span>Nuvion-IoT</span>
                   </Link>
                    <nav className='flex items-center gap-2'>
                        <ThemeToggleButton />
@@ -325,10 +325,10 @@ export function LandingPage() {
                 <div className="flex flex-col items-center md:items-start gap-4">
                     <Link href="/" className="flex items-center gap-2 font-bold text-lg">
                         <Rss className="h-7 w-7 text-primary" />
-                        <span>Nuvion IoT</span>
+                        <span>Nuvion-IoT</span>
                     </Link>
                     <div className='text-muted-foreground text-center md:text-left space-y-2'>
-                       <p>&copy; {new Date().getFullYear()} Nuvion IoT. All Rights Reserved.</p>
+                       <p>&copy; {new Date().getFullYear()} Nuvion-IoT. All Rights Reserved.</p>
                        <div className='flex items-center gap-2 justify-center md:justify-start'>
                            <span className='relative flex h-2 w-2'>
                                <span className='animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75'></span>

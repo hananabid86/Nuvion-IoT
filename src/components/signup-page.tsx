@@ -79,7 +79,7 @@ export function SignupPage() {
             <div className="absolute top-8">
                 <Link href="/" className="flex items-center gap-2 font-semibold text-lg">
                     <Rss className="h-7 w-7 text-primary" />
-                    <span>Nuvion IoT</span>
+                    <span>Nuvion-IoT</span>
                 </Link>
             </div>
             <Card className="w-full max-w-sm">

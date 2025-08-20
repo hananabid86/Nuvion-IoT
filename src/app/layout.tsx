@@ -7,8 +7,8 @@ import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/hooks/use-auth';
 
 export const metadata: Metadata = {
-  title: 'Nuvion IoT',
-  description: 'Manage and monitor your IoT devices in real-time.',
+  title: 'Nuvion-IoT: An Edge-AI–Enabled Multi-Protocol IoT Gateway',
+  description: 'A single platform to manage and monitor multi-protocol IoT devices, enhanced with Edge-AI for anomaly detection, fault prediction, and optimization.',
 };
 
 export default function RootLayout({

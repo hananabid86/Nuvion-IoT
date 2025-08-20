@@ -129,7 +129,7 @@ export function Sidebar() {
             <div className={cn("flex items-center justify-between h-16 border-b px-6", isSidebarCollapsed && "justify-center")}>
                 <Link href="/dashboard" className="flex items-center gap-2 font-semibold text-lg">
                     <Rss className="h-7 w-7 text-sidebar-primary" />
-                    <span className={cn("truncate", isSidebarCollapsed && "hidden")}>Nuvion IoT</span>
+                    <span className={cn("truncate", isSidebarCollapsed && "hidden")}>Nuvion-IoT</span>
                 </Link>
                  <Button variant="ghost" size="icon" className="md:hidden" onClick={toggleSidebar}>
                     <X className="h-6 w-6" />
