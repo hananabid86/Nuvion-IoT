@@ -67,31 +67,6 @@ export function AutomationsPage() {
         };
     }, [user, toast]);
 
-    // Client-side trigger to run automations every minute
-    // This functionality is temporarily disabled to ensure application stability.
-    /*
-     useEffect(() => {
-        const interval = setInterval(async () => {
-            if (user && automations.length > 0) {
-                // This logic would ideally call a backend flow that checks all due automations.
-                // For now, we simulate checking and triggering.
-                const now = new Date();
-                const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-                
-                const dueAutomations = automations.filter(auto => auto.time === currentTime);
-
-                for (const auto of dueAutomations) {
-                     const command = { [auto.variableName]: auto.targetState };
-                     console.log(`Triggering automation for device ${auto.deviceId}:`, command);
-                     await publishMqttCommand({ deviceId: auto.deviceId, command });
-                }
-            }
-        }, 60000); // Every 60 seconds
-
-        return () => clearInterval(interval);
-    }, [user, automations]);
-    */
-
     const handleSaveAutomation = async (automationToSave: Automation) => {
         if (!user) return;
 

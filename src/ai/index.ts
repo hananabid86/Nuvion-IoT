@@ -5,7 +5,6 @@
  */
 import { genkit } from 'genkit';
 import { googleAI } from '@genkit-ai/googleai';
-import {NextRequest} from 'next/server';
 
 // Import flows so that they are registered with the AI system.
 import './flows/process-edge-event-flow';
@@ -15,7 +14,6 @@ export const ai = genkit({
   plugins: [
     googleAI(),
   ],
-  // Log developer-friendly error messages to the console.
-  logLevel: 'debug',
   // Omit OpenTelemetry options to prevent build errors in Next.js.
+  // The 'logLevel' option pulls in server-only dependencies.
 });
