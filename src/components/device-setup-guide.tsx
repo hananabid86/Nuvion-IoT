@@ -82,10 +82,10 @@ const char* WIFI_PASS = "YOUR_WIFI_PASSWORD";
 
 // --- Mosquitto Broker Configuration ---
 // Your Mosquitto broker's IP address or domain name
-const char* MQTT_BROKER = "test.mosquitto.org"; 
-const int   MQTT_PORT   = 1883;
-const char* MQTT_USER   = ""; // Not needed for test.mosquitto.org
-const char* MQTT_PASS   = ""; // Not needed for test.mosquitto.org
+const char* MQTT_BROKER = "YOUR_MQTT_BROKER_IP_OR_DOMAIN"; 
+const int   MQTT_PORT   = 1883; // Or 8883 for TLS/SSL
+const char* MQTT_USER   = "YOUR_MQTT_USERNAME";
+const char* MQTT_PASS   = "YOUR_MQTT_PASSWORD";
 
 // --- Platform Configuration ---
 // This is the hostname of your deployed dashboard application
@@ -361,10 +361,10 @@ def pair_device():
             config_data = {
                 "api_key": api_key, 
                 "device_id": HARDWARE_ID,
-                "mqtt_broker": "test.mosquitto.org",
+                "mqtt_broker": "YOUR_MQTT_BROKER_IP_OR_DOMAIN",
                 "mqtt_port": 1883,
-                "mqtt_user": "",
-                "mqtt_pass": ""
+                "mqtt_user": "YOUR_MQTT_USERNAME",
+                "mqtt_pass": "YOUR_MQTT_PASSWORD"
             }
             with open("device_config.json", "w") as f:
                 json.dump(config_data, f, indent=4)
@@ -421,10 +421,10 @@ const char* WIFI_SSID = "YOUR_WIFI_SSID";
 const char* WIFI_PASS = "YOUR_WIFI_PASSWORD";
 
 // --- Mosquitto Broker Configuration ---
-const char* MQTT_BROKER = "test.mosquitto.org"; 
-const int   MQTT_PORT   = 1883;
-const char* MQTT_USER   = ""; // Not needed for test.mosquitto.org
-const char* MQTT_PASS   = ""; // Not needed for test.mosquitto.org
+const char* MQTT_BROKER = "YOUR_MQTT_BROKER_IP_OR_DOMAIN"; 
+const int   MQTT_PORT   = 1883; // Or 8883 for TLS/SSL
+const char* MQTT_USER   = "YOUR_MQTT_USERNAME";
+const char* MQTT_PASS   = "YOUR_MQTT_PASSWORD";
 
 // --- Device Configuration ---
 const char* API_KEY   = "${apiKey}"; 
@@ -586,10 +586,10 @@ except FileNotFoundError:
 # --- Configuration loaded from file ---
 API_KEY = config.get("api_key", "${apiKey}")
 DEVICE_ID = config.get("device_id", "YOUR_UNIQUE_DEVICE_ID")
-MQTT_BROKER = config.get("mqtt_broker", "test.mosquitto.org")
+MQTT_BROKER = config.get("mqtt_broker", "YOUR_MQTT_BROKER_IP_OR_DOMAIN")
 MQTT_PORT = config.get("mqtt_port", 1883)
-MQTT_USER = config.get("mqtt_user", "")
-MQTT_PASS = config.get("mqtt_pass", "")
+MQTT_USER = config.get("mqtt_user", "YOUR_MQTT_USERNAME")
+MQTT_PASS = config.get("mqtt_pass", "YOUR_MQTT_PASSWORD")
 
 # --- MQTT Topics ---
 DATA_TOPIC = f"devices/{DEVICE_ID}/data"
@@ -826,11 +826,11 @@ export function DeviceSetupGuide({ open, onOpenChange, mode, onGenerateToken, is
                     <p className='text-muted-foreground'>To connect your devices, you need your Mosquitto broker's details:</p>
                      <ul className='text-primary my-4 font-semibold list-inside list-disc text-left ml-4'>
                         <li>Broker URL or IP Address</li>
-                        <li>Broker Port (e.g., 1883)</li>
+                        <li>Broker Port (e.g., 1883 or 8883 for SSL)</li>
                         <li>Broker Username</li>
                         <li>Broker Password</li>
                      </ul>
-                    <p className="text-sm text-muted-foreground">The code examples are pre-filled with the public <code className='font-mono text-xs bg-muted p-1 rounded'>test.mosquitto.org</code> broker for easy testing.</p>
+                    <p className="text-sm text-muted-foreground">The code examples are pre-filled with placeholders that you must replace with your own broker's credentials.</p>
                 </div>
             )
         },
