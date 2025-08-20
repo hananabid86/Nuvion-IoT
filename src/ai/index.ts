@@ -1,13 +1,15 @@
+
 /**
  * @fileoverview This file configures and initializes the Genkit AI agent
  * for the Nuvion IoT platform.
  */
 import { genkit } from 'genkit';
 import { googleAI } from '@genkit-ai/googleai';
+import {NextRequest} from 'next/server';
 
 // Import flows so that they are registered with the AI system.
-import './flows/run-automations-flow';
 import './flows/process-edge-event-flow';
+import './flows/run-automations-flow';
 
 export const ai = genkit({
   plugins: [
