@@ -363,7 +363,7 @@ export function LandingPage() {
 
                 {/* Column 3: Developer Credit */}
                 <div className="flex flex-col items-center md:items-end gap-3 text-center md:text-right">
-                     <p className="font-semibold text-foreground">developed by Hanan abid</p>
+                     <p className="font-semibold text-foreground">Developed by Hanan abid</p>
                      <a href="https://github.com/hananabid86/Nuvion-IoT" target="_blank" rel="noopener noreferrer">
                         <Button variant="outline" size="sm">
                             <Github className="h-4 w-4 mr-2" />

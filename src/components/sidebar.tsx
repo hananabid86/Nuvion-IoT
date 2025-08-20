@@ -164,7 +164,7 @@ export function Sidebar() {
                     <SidebarLink href="/profile" label="Profile" icon={User} isProfileLink={true} />
                 </div>
                  <div className="border-t pt-2">
-                    <SidebarLink href="https://github.com/hananabid86/Nuvion-IoT" label="developed by Hanan abid" icon={Github} external={true} />
+                    <SidebarLink href="https://github.com/hananabid86/Nuvion-IoT" label="Developed by Hanan abid" icon={Github} external={true} />
                  </div>
             </div>
 
