@@ -9,9 +9,11 @@ import { DeviceCard } from './device-card';
 import type { Device } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { ScrollProgressBar } from './scroll-progress-bar';
+import { useAuth } from '@/hooks/use-auth';
 
 export function LandingPage() {
   const { setTheme, theme } = useTheme();
+  const { user } = useAuth();
   const [mounted, setMounted] = useState(false);
   const [visitCount, setVisitCount] = useState(0);
   const [showScroll, setShowScroll] = useState(false);
@@ -139,12 +141,20 @@ export function LandingPage() {
                   </Link>
                    <nav className='flex items-center gap-2'>
                        <ThemeToggleButton />
-                       <Button asChild variant="ghost">
-                           <Link href="/login">Log In</Link>
-                       </Button>
-                       <Button asChild>
-                           <Link href="/signup">Sign Up <ArrowRight className="ml-2 h-4 w-4" /></Link>
-                       </Button>
+                       {user ? (
+                           <Button asChild>
+                               <Link href="/dashboard">Go to Dashboard <ArrowRight className="ml-2 h-4 w-4" /></Link>
+                           </Button>
+                       ) : (
+                           <>
+                               <Button asChild variant="ghost">
+                                   <Link href="/login">Log In</Link>
+                               </Button>
+                               <Button asChild>
+                                   <Link href="/signup">Sign Up <ArrowRight className="ml-2 h-4 w-4" /></Link>
+                               </Button>
+                           </>
+                       )}
                   </nav>
               </div>
           </header>
@@ -353,8 +363,8 @@ export function LandingPage() {
 
                 {/* Column 3: Developer Credit */}
                 <div className="flex flex-col items-center md:items-end gap-3 text-center md:text-right">
-                     <p className="font-semibold text-foreground">Built in Firebase GenAI Studio</p>
-                     <a href="https://github.com/firebase/genkit" target="_blank" rel="noopener noreferrer">
+                     <p className="font-semibold text-foreground">developed by Hanan abid</p>
+                     <a href="https://github.com/hananabid86/Nuvion-IoT" target="_blank" rel="noopener noreferrer">
                         <Button variant="outline" size="sm">
                             <Github className="h-4 w-4 mr-2" />
                             View on GitHub
