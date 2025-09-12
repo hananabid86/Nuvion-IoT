@@ -20,7 +20,7 @@ import { cn } from '@/lib/utils';
 import { useAppState } from '@/hooks/use-app-state';
 import { useTheme } from 'next-themes';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
-import { getFirebase } from '@/lib/firebase';
+import { firebase } from '@/lib/firebase';
 import { SearchInput } from './search-input';
 import { useAuth } from '@/hooks/use-auth';
 
@@ -52,7 +52,7 @@ export function Header() {
     // Listen for device changes from Firestore
     useEffect(() => {
         if (!user) return;
-        const { db } = getFirebase();
+        const { db } = firebase;
         const q = query(collection(db, `users/${user.uid}/devices`));
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const devicesData = snapshot.docs.map(doc => doc.data() as Device);

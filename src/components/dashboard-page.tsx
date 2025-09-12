@@ -10,7 +10,7 @@ import { Card } from "@/components/ui/card";
 import { addNotification } from "@/lib/notifications";
 import { Button } from "./ui/button";
 import { collection, onSnapshot, query, doc, updateDoc, Timestamp } from 'firebase/firestore';
-import { getFirebase } from '@/lib/firebase';
+import { firebase } from '@/lib/firebase';
 import { useToast } from "@/hooks/use-toast";
 import { StatCard } from "./stat-card";
 import { useSearch } from "@/hooks/use-search";
@@ -48,7 +48,7 @@ export function DashboardPage() {
       return;
     }
     
-    const { db } = getFirebase();
+    const { db } = firebase;
     const q = query(collection(db, `users/${user.uid}/devices`));
     
     // Store the unsubscribe function returned by onSnapshot
@@ -118,7 +118,7 @@ export function DashboardPage() {
   
   const handlePinToggle = useCallback(async (firestoreId: string) => {
     if (!user) return;
-    const { db } = getFirebase();
+    const { db } = firebase;
     const device = devices.find(d => d.firestoreId === firestoreId);
     if (!device || !device.firestoreId) return;
     const deviceRef = doc(db, `users/${user.uid}/devices`, device.firestoreId);

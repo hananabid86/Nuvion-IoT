@@ -2,7 +2,7 @@
 import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
 import { getFirestore, type Firestore } from "firebase/firestore";
 import { getAuth, type Auth, browserLocalPersistence, initializeAuth } from "firebase/auth";
-import { getStorage } from "firebase/storage";
+import { getStorage, type FirebaseStorage } from "firebase/storage";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -18,22 +18,16 @@ interface FirebaseServices {
     app: FirebaseApp;
     auth: Auth;
     db: Firestore;
-    storage: ReturnType<typeof getStorage>;
+    storage: FirebaseStorage;
 }
 
-let firebaseServices: FirebaseServices | null = null;
-
-// This function initializes Firebase and returns the services.
-// It's designed to be a singleton, ensuring it only runs once.
-export async function getFirebase(): Promise<FirebaseServices> {
-    if (firebaseServices) {
-        return firebaseServices;
-    }
-
+// This function acts as a singleton provider for Firebase services.
+// It initializes Firebase only once and returns the same instance on subsequent calls.
+function getFirebaseServices(): FirebaseServices {
     const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
     
-    // Using initializeAuth for browser environments to ensure persistence works correctly.
-    // For server-side, getAuth is sufficient.
+    // In a client-side environment, we use initializeAuth to enable persistence.
+    // getAuth() is sufficient for server-side environments or if persistence is not needed.
     const auth = typeof window !== 'undefined' 
         ? initializeAuth(app, { persistence: browserLocalPersistence })
         : getAuth(app);
@@ -41,7 +35,9 @@ export async function getFirebase(): Promise<FirebaseServices> {
     const db = getFirestore(app);
     const storage = getStorage(app);
     
-    firebaseServices = { app, auth, db, storage };
-    
-    return firebaseServices;
+    return { app, auth, db, storage };
 }
+
+// Export a single, memoized instance of the Firebase services.
+// This ensures that Firebase is initialized only once and the same instance is used throughout the app.
+export const firebase = getFirebaseServices();

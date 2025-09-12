@@ -1,5 +1,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
+import { firebase } from '@/lib/firebase'; // Direct import
 
 export async function GET(req: NextRequest) {
   try {

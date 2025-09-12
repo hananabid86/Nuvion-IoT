@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useAppState } from '@/hooks/use-app-state';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
-import { getFirebase } from '@/lib/firebase';
+import { firebase } from '@/lib/firebase';
 import { useAuth } from '@/hooks/use-auth';
 
 const ThemeToggleButton = () => {
@@ -46,7 +46,7 @@ export function Sidebar() {
 
     useEffect(() => {
         if (!user) return;
-        const { db } = getFirebase();
+        const { db } = firebase;
         const q = query(collection(db, `users/${user.uid}/devices`));
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const devicesData = snapshot.docs.map(doc => doc.data() as Device);

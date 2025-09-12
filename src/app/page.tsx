@@ -2,8 +2,7 @@
 import { LandingPage } from "@/components/landing-page";
 
 export default function Home() {
-  // Directly return the LandingPage component.
-  // The original logic for redirecting authenticated users can be handled by middleware
-  // or by a user action (e.g., clicking "Go to Dashboard").
+  // The AuthGuard and middleware now handle redirection for logged-in users,
+  // so this page can simply always render the landing page.
   return <LandingPage />;
 }
