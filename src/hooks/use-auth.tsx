@@ -2,7 +2,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import {
   onAuthStateChanged,
   User,
@@ -17,7 +17,6 @@ import {
 } from 'firebase/auth';
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { getFirebase } from '@/lib/firebase';
-import { Loader } from 'lucide-react';
 
 interface AuthContextType {
   user: User | null;
@@ -33,74 +32,40 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const FullPageLoader = () => (
-    <div className="flex items-center justify-center h-screen w-screen bg-background">
-        <div className="flex flex-col items-center gap-2">
-            <Loader className="h-8 w-8 animate-spin text-primary" />
-            <p className="text-muted-foreground">Loading...</p>
-        </div>
-    </div>
-);
-
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
-  const pathname = usePathname();
   const { auth, storage } = getFirebase();
 
   useEffect(() => {
+    let verificationPoller: NodeJS.Timeout | null = null;
+    
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      if (verificationPoller) clearInterval(verificationPoller);
+
+      if (currentUser && !currentUser.emailVerified) {
+        // If the user is new and not verified, start polling their status
+        verificationPoller = setInterval(async () => {
+            await currentUser.reload();
+            if (currentUser.emailVerified) {
+                if (verificationPoller) clearInterval(verificationPoller);
+                // Create a new user object to trigger re-render and effects
+                setUser({ ...currentUser }); 
+                router.push('/dashboard'); // Explicitly redirect on verification
+            }
+        }, 3000);
+      }
+      
       setUser(currentUser);
       setLoading(false);
     });
-    return () => unsubscribe();
-  }, [auth]);
 
-  useEffect(() => {
-    if (loading) return;
-
-    const isAuthPage = pathname === '/login' || pathname === '/signup';
-    const isVerificationPage = pathname === '/verify-email';
-    const isPublicPage = isAuthPage || isVerificationPage || pathname === '/';
-    
-    let verificationPoller: NodeJS.Timeout | null = null;
-    
-    if (user) { // User is logged in
-        if (!user.emailVerified) { // User's email is not verified
-            if (!isVerificationPage) {
-                router.push('/verify-email');
-            } else {
-                 // On verification page, poll for status change
-                verificationPoller = setInterval(async () => {
-                    await user.reload();
-                    if (user.emailVerified) {
-                        // Create a new user object to force a state update
-                        setUser(auth.currentUser); 
-                    }
-                }, 3000); 
-            }
-        } else { // User is logged in and verified
-            if (isAuthPage || isVerificationPage) {
-                router.push('/dashboard');
-            }
-        }
-    } else { // No user is logged in
-        if (!isPublicPage) {
-            router.push('/login');
-        }
-    }
-    
-    // Cleanup poller on component unmount or when dependencies change
     return () => {
-        if (verificationPoller) {
-            clearInterval(verificationPoller);
-        }
-    }
-
-  }, [user, loading, pathname, router, auth]);
-
+      unsubscribe();
+      if (verificationPoller) clearInterval(verificationPoller);
+    };
+  }, [auth, router]);
 
   const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
@@ -110,12 +75,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signUpWithEmail = async (email: string, pass: string) => {
     const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
     await sendEmailVerification(userCredential.user);
-    // onAuthStateChanged will handle redirect to /verify-email
+    // onAuthStateChanged will handle the user state update
   }
 
   const signInWithEmail = async (email: string, pass: string) => {
     await signInWithEmailAndPassword(auth, email, pass);
-    // onAuthStateChanged will handle redirect.
+    // onAuthStateChanged will handle the user state update
   }
   
   const sendVerificationEmail = async () => {
@@ -136,6 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
   
   const updateUserProfile = async (displayName: string, photoFile: File | null) => {
+    const { auth, storage } = getFirebase();
     if (!auth.currentUser) {
         throw new Error("No user is currently signed in.");
     }
@@ -157,21 +123,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const value = { user, loading, signInWithGoogle, signUpWithEmail, signInWithEmail, signOut, sendVerificationEmail, sendPasswordReset, updateUserProfile };
-
-  if (loading) {
-      return <FullPageLoader />;
-  }
-
-  // If user is not verified and not on a public/verification page, show loader until redirect completes
-  if (user && !user.emailVerified && pathname !== '/verify-email') {
-    return <FullPageLoader />;
-  }
-  
-  // If user is not logged in and not on a public page, show loader until redirect completes
-  if (!user && !(pathname === '/login' || pathname === '/signup' || pathname === '/')) {
-      return <FullPageLoader />;
-  }
-
 
   return (
     <AuthContext.Provider value={value}>

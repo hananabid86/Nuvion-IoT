@@ -17,8 +17,6 @@ import { useSearch } from "@/hooks/use-search";
 import { useAuth } from "@/hooks/use-auth";
 import { publishMqttCommand } from "@/actions/publish-mqtt-command";
 
-const { db } = getFirebase();
-
 function parseLastSeen(lastSeen: any): Date | null {
     if (!lastSeen) return null;
     if (lastSeen instanceof Date) return lastSeen;
@@ -50,6 +48,7 @@ export function DashboardPage() {
       return;
     }
     
+    const { db } = getFirebase();
     const q = query(collection(db, `users/${user.uid}/devices`));
     
     // Store the unsubscribe function returned by onSnapshot
@@ -119,6 +118,7 @@ export function DashboardPage() {
   
   const handlePinToggle = useCallback(async (firestoreId: string) => {
     if (!user) return;
+    const { db } = getFirebase();
     const device = devices.find(d => d.firestoreId === firestoreId);
     if (!device || !device.firestoreId) return;
     const deviceRef = doc(db, `users/${user.uid}/devices`, device.firestoreId);

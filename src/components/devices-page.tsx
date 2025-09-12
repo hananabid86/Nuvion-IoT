@@ -47,8 +47,6 @@ import { useAuth } from '@/hooks/use-auth';
 import { DeviceSetupGuide } from './device-setup-guide';
 import Link from 'next/link';
 
-const { db } = getFirebase();
-
 const generatePairingTokenValue = () => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     let token = '';
@@ -95,6 +93,7 @@ export function DevicesPage() {
             return;
         }
         setIsLoading(true);
+        const { db } = getFirebase();
         const q = query(collection(db, `users/${user.uid}/devices`));
         
         const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -115,7 +114,7 @@ export function DevicesPage() {
     
      useEffect(() => {
         if (!user) return;
-
+        const { db } = getFirebase();
         const tokensQuery = query(collection(db, 'pairingTokens'));
 
         const unsubscribe = onSnapshot(tokensQuery, (snapshot) => {
@@ -177,6 +176,7 @@ export function DevicesPage() {
     const handleNewPairingToken = async () => {
         if (!user) return;
         setIsGeneratingToken(true);
+        const { db } = getFirebase();
         const tokenValue = generatePairingTokenValue();
         const expires = new Date(Date.now() + 15 * 60 * 1000);
         
@@ -201,6 +201,7 @@ export function DevicesPage() {
     
     const handleCancelToken = async () => {
         if (!activePairingToken || !activePairingToken.docId) return;
+        const { db } = getFirebase();
         try {
             const tokenRef = doc(db, 'pairingTokens', activePairingToken.docId);
             await updateDoc(tokenRef, { used: true });
@@ -212,6 +213,7 @@ export function DevicesPage() {
     
     const handleSaveDevice = async (deviceToSave: Device) => {
         if (!user) return;
+        const { db } = getFirebase();
         const batch = writeBatch(db);
         try {
             if (deviceToSave.firestoreId) {
@@ -247,6 +249,7 @@ export function DevicesPage() {
 
     const confirmDeleteDevice = async () => {
         if (!deviceToDelete || !deviceToDelete.firestoreId || !user) return;
+        const { db } = getFirebase();
         const batch = writeBatch(db);
         try {
             const deviceRef = doc(db, `users/${user.uid}/devices`, deviceToDelete.firestoreId);
@@ -267,6 +270,7 @@ export function DevicesPage() {
     const confirmRegenerateKey = async () => {
         if (!deviceToRegenerate || !deviceToRegenerate.firestoreId || !user) return;
         
+        const { db } = getFirebase();
         const oldApiKey = deviceToRegenerate.apiKey;
         const newApiKey = generateApiKey();
         

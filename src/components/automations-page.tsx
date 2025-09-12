@@ -23,8 +23,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { publishMqttCommand } from '@/actions/publish-mqtt-command';
 
-const { db } = getFirebase();
-
 export function AutomationsPage() {
     const { user } = useAuth();
     const { toast } = useToast();
@@ -42,6 +40,7 @@ export function AutomationsPage() {
         };
         setIsLoading(true);
 
+        const { db } = getFirebase();
         const automationsQuery = query(collection(db, `users/${user.uid}/automations`));
         const devicesQuery = query(collection(db, `users/${user.uid}/devices`));
 
@@ -69,7 +68,7 @@ export function AutomationsPage() {
 
     const handleSaveAutomation = async (automationToSave: Automation) => {
         if (!user) return;
-
+        const { db } = getFirebase();
         try {
             const automationRef = doc(db, `users/${user.uid}/automations`, automationToSave.id);
             await setDoc(automationRef, automationToSave, { merge: true });
@@ -90,6 +89,7 @@ export function AutomationsPage() {
     
     const confirmDeleteAutomation = async () => {
         if (!automationToDelete || !user) return;
+        const { db } = getFirebase();
         try {
             await deleteDoc(doc(db, `users/${user.uid}/automations`, automationToDelete.id));
             toast({

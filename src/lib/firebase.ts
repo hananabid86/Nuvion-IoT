@@ -1,14 +1,9 @@
 
 import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
 import { getFirestore, type Firestore } from "firebase/firestore";
-import { getAuth, type Auth } from "firebase/auth";
+import { getAuth, type Auth, browserLocalPersistence, initializeAuth } from "firebase/auth";
 import { getStorage } from "firebase/storage";
 
-// The Firebase config object is now built from environment variables.
-// This is the standard for secure deployment.
-// In your Vercel project settings, you will need to add these
-// environment variables. For local development, you can create a
-// .env.local file in the root of your project.
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -19,36 +14,34 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
 };
 
-
-// Singleton pattern to ensure a single instance of Firebase services per request,
-// which is crucial for serverless environments like Vercel.
-let app: FirebaseApp;
-let auth: Auth;
-let db: Firestore;
-let storage: ReturnType<typeof getStorage>;
-
-function getFirebase() {
-    if (getApps().length === 0) {
-        // Check if all required environment variables are present
-        if (
-            !firebaseConfig.apiKey ||
-            !firebaseConfig.authDomain ||
-            !firebaseConfig.projectId
-        ) {
-            throw new Error(
-                'Firebase environment variables are not set. Please check your .env.local file or Vercel project settings.'
-            );
-        }
-        app = initializeApp(firebaseConfig);
-    } else {
-        app = getApp();
-    }
-    
-    auth = getAuth(app);
-    db = getFirestore(app);
-    storage = getStorage(app);
-
-    return { app, auth, db, storage };
+interface FirebaseServices {
+    app: FirebaseApp;
+    auth: Auth;
+    db: Firestore;
+    storage: ReturnType<typeof getStorage>;
 }
 
-export { getFirebase };
+let firebaseServices: FirebaseServices | null = null;
+
+// This function initializes Firebase and returns the services.
+// It's designed to be a singleton, ensuring it only runs once.
+export async function getFirebase(): Promise<FirebaseServices> {
+    if (firebaseServices) {
+        return firebaseServices;
+    }
+
+    const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+    
+    // Using initializeAuth for browser environments to ensure persistence works correctly.
+    // For server-side, getAuth is sufficient.
+    const auth = typeof window !== 'undefined' 
+        ? initializeAuth(app, { persistence: browserLocalPersistence })
+        : getAuth(app);
+        
+    const db = getFirestore(app);
+    const storage = getStorage(app);
+    
+    firebaseServices = { app, auth, db, storage };
+    
+    return firebaseServices;
+}

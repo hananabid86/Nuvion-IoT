@@ -19,8 +19,6 @@ import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { getFirebase } from '@/lib/firebase';
 import { useAuth } from '@/hooks/use-auth';
 
-const { db } = getFirebase();
-
 const ThemeToggleButton = () => {
     const { setTheme, theme } = useTheme();
     const [mounted, setMounted] = useState(false);
@@ -48,6 +46,7 @@ export function Sidebar() {
 
     useEffect(() => {
         if (!user) return;
+        const { db } = getFirebase();
         const q = query(collection(db, `users/${user.uid}/devices`));
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const devicesData = snapshot.docs.map(doc => doc.data() as Device);

@@ -4,13 +4,11 @@ import { getFirebase } from '@/lib/firebase';
 import { collection, query, where, getDocs, doc, limit, writeBatch, collectionGroup } from 'firebase/firestore';
 import type { Device } from '@/lib/types';
 
-const { db } = getFirebase();
-
 const generateApiKey = () => `iotc_${crypto.randomUUID().replace(/-/g, '')}`;
-
 
 export async function POST(req: NextRequest) {
      try {
+        const { db } = await getFirebase();
         const { hardwareId, pairingToken } = await req.json();
 
         if (!hardwareId || !pairingToken) {

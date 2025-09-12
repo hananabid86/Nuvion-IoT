@@ -17,9 +17,6 @@ import { getFirebase } from '@/lib/firebase';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 
-
-const { db } = getFirebase();
-
 const INACTIVITY_THRESHOLD = 60000; // 60 seconds
 
 const ICONS: { [key: string]: React.ElementType } = {
@@ -73,6 +70,7 @@ export function DeviceDetailPage({ deviceId }: { deviceId: string }) {
             return;
         }
         
+        const { db } = getFirebase();
         const deviceRef = doc(db, `users/${user.uid}/devices`, deviceId);
 
         const unsubscribe = onSnapshot(deviceRef, (doc) => {
