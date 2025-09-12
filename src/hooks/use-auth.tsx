@@ -14,6 +14,7 @@ import {
   sendEmailVerification,
   sendPasswordResetEmail,
   updateProfile,
+  type Auth,
 } from 'firebase/auth';
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { getFirebase } from '@/lib/firebase';
@@ -35,90 +36,106 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [auth, setAuth] = useState<Auth | null>(null);
   const router = useRouter();
-  const { auth, storage } = getFirebase();
-
+  
   useEffect(() => {
     let verificationPoller: NodeJS.Timeout | null = null;
-    
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      if (verificationPoller) clearInterval(verificationPoller);
+    let unsubscribe: (() => void) | null = null;
 
-      if (currentUser && !currentUser.emailVerified) {
-        // If the user is new and not verified, start polling their status
-        verificationPoller = setInterval(async () => {
-            await currentUser.reload();
-            if (currentUser.emailVerified) {
-                if (verificationPoller) clearInterval(verificationPoller);
-                // Create a new user object to trigger re-render and effects
-                setUser({ ...currentUser }); 
-                router.push('/dashboard'); // Explicitly redirect on verification
-            }
-        }, 3000);
-      }
-      
-      setUser(currentUser);
-      setLoading(false);
-    });
+    const initializeAuth = async () => {
+      const { auth: firebaseAuth } = await getFirebase();
+      setAuth(firebaseAuth);
+
+      unsubscribe = onAuthStateChanged(firebaseAuth, (currentUser) => {
+        if (verificationPoller) clearInterval(verificationPoller);
+
+        if (currentUser && !currentUser.emailVerified) {
+          verificationPoller = setInterval(async () => {
+              await currentUser.reload();
+              if (currentUser.emailVerified) {
+                  if (verificationPoller) clearInterval(verificationPoller);
+                  setUser({ ...currentUser }); 
+                  router.push('/dashboard');
+              }
+          }, 3000);
+        }
+        
+        setUser(currentUser);
+        setLoading(false);
+      });
+    };
+
+    initializeAuth();
 
     return () => {
-      unsubscribe();
+      if (unsubscribe) unsubscribe();
       if (verificationPoller) clearInterval(verificationPoller);
     };
-  }, [auth, router]);
+  }, [router]);
+
+  const ensureAuth = async () => {
+      if (auth) return auth;
+      const { auth: firebaseAuth } = await getFirebase();
+      setAuth(firebaseAuth);
+      return firebaseAuth;
+  }
 
   const signInWithGoogle = async () => {
+    const authInstance = await ensureAuth();
     const provider = new GoogleAuthProvider();
-    await signInWithRedirect(auth, provider);
+    await signInWithRedirect(authInstance, provider);
   };
 
   const signUpWithEmail = async (email: string, pass: string) => {
-    const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
+    const authInstance = await ensureAuth();
+    const userCredential = await createUserWithEmailAndPassword(authInstance, email, pass);
     await sendEmailVerification(userCredential.user);
-    // onAuthStateChanged will handle the user state update
   }
 
   const signInWithEmail = async (email: string, pass: string) => {
-    await signInWithEmailAndPassword(auth, email, pass);
-    // onAuthStateChanged will handle the user state update
+    const authInstance = await ensureAuth();
+    await signInWithEmailAndPassword(authInstance, email, pass);
   }
   
   const sendVerificationEmail = async () => {
-    if (auth.currentUser) {
-        await sendEmailVerification(auth.currentUser);
+    const authInstance = await ensureAuth();
+    if (authInstance.currentUser) {
+        await sendEmailVerification(authInstance.currentUser);
     } else {
         throw new Error("No user is currently signed in.");
     }
   }
   
   const sendPasswordReset = async (email: string) => {
-     await sendPasswordResetEmail(auth, email);
+     const authInstance = await ensureAuth();
+     await sendPasswordResetEmail(authInstance, email);
   }
 
   const signOut = async () => {
-    await firebaseSignOut(auth);
+    const authInstance = await ensureAuth();
+    await firebaseSignOut(authInstance);
     router.push('/login');
   };
   
   const updateUserProfile = async (displayName: string, photoFile: File | null) => {
-    const { auth, storage } = getFirebase();
-    if (!auth.currentUser) {
+    const { auth: authInstance, storage } = await getFirebase();
+    if (!authInstance.currentUser) {
         throw new Error("No user is currently signed in.");
     }
     
-    let photoURL = auth.currentUser.photoURL;
+    let photoURL = authInstance.currentUser.photoURL;
 
     if (photoFile) {
-        const storageRef = ref(storage, `avatars/${auth.currentUser.uid}/${photoFile.name}`);
+        const storageRef = ref(storage, `avatars/${authInstance.currentUser.uid}/${photoFile.name}`);
         const snapshot = await uploadBytes(storageRef, photoFile);
         photoURL = await getDownloadURL(snapshot.ref);
     }
     
-    await updateProfile(auth.currentUser, { displayName, photoURL });
+    await updateProfile(authInstance.currentUser, { displayName, photoURL });
     
-    // Force a re-render with the updated user object
-    if (auth.currentUser) {
-      setUser({ ...auth.currentUser });
+    if (authInstance.currentUser) {
+      setUser({ ...authInstance.currentUser });
     }
   }
 
