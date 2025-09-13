@@ -13,7 +13,7 @@ import { Area, AreaChart, CartesianGrid, XAxis, YAxis, Tooltip as RechartsToolti
 import Link from 'next/link';
 import { Button } from './ui/button';
 import { onSnapshot, doc, Timestamp } from 'firebase/firestore';
-import { firebase } from '@/lib/firebase';
+import { getFirebaseDb } from '@/lib/firebase';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 
@@ -70,7 +70,7 @@ export function DeviceDetailPage({ deviceId }: { deviceId: string }) {
             return;
         }
         
-        const { db } = firebase;
+        const db = getFirebaseDb();
         const deviceRef = doc(db, `users/${user.uid}/devices`, deviceId);
 
         const unsubscribe = onSnapshot(deviceRef, (doc) => {

@@ -1,6 +1,6 @@
 
 import { NextResponse, type NextRequest } from 'next/server';
-import { firebase } from '@/lib/firebase'; // Direct import
+import { firebase } from '@/lib/firebase';
 import { collection, query, where, getDocs, doc, limit, writeBatch, collectionGroup } from 'firebase/firestore';
 import type { Device } from '@/lib/types';
 
@@ -8,7 +8,7 @@ const generateApiKey = () => `iotc_${crypto.randomUUID().replace(/-/g, '')}`;
 
 export async function POST(req: NextRequest) {
      try {
-        const { db } = firebase; // Use destructured from direct import
+        const { db } = firebase;
         const { hardwareId, pairingToken } = await req.json();
 
         if (!hardwareId || !pairingToken) {

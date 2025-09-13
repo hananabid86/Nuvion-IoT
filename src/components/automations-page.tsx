@@ -8,7 +8,7 @@ import type { Automation, Device } from '@/lib/types';
 import { CreateAutomationDialog } from './create-automation-dialog';
 import { addNotification } from '@/lib/notifications';
 import { collection, onSnapshot, query, doc, deleteDoc, setDoc } from 'firebase/firestore';
-import { firebase } from '@/lib/firebase';
+import { getFirebaseDb } from '@/lib/firebase';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -40,7 +40,7 @@ export function AutomationsPage() {
         };
         setIsLoading(true);
 
-        const { db } = firebase;
+        const db = getFirebaseDb();
         const automationsQuery = query(collection(db, `users/${user.uid}/automations`));
         const devicesQuery = query(collection(db, `users/${user.uid}/devices`));
 
@@ -68,7 +68,7 @@ export function AutomationsPage() {
 
     const handleSaveAutomation = async (automationToSave: Automation) => {
         if (!user) return;
-        const { db } = firebase;
+        const db = getFirebaseDb();
         try {
             const automationRef = doc(db, `users/${user.uid}/automations`, automationToSave.id);
             await setDoc(automationRef, automationToSave, { merge: true });
@@ -89,7 +89,7 @@ export function AutomationsPage() {
     
     const confirmDeleteAutomation = async () => {
         if (!automationToDelete || !user) return;
-        const { db } = firebase;
+        const db = getFirebaseDb();
         try {
             await deleteDoc(doc(db, `users/${user.uid}/automations`, automationToDelete.id));
             toast({

@@ -14,30 +14,51 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
 };
 
-interface FirebaseServices {
-    app: FirebaseApp;
-    auth: Auth;
-    db: Firestore;
-    storage: FirebaseStorage;
+let app: FirebaseApp;
+let auth: Auth;
+let db: Firestore;
+let storage: FirebaseStorage;
+
+// This ensures we initialize Firebase only once.
+if (!getApps().length) {
+    app = initializeApp(firebaseConfig);
+} else {
+    app = getApp();
 }
 
-// This function acts as a singleton provider for Firebase services.
-// It initializes Firebase only once and returns the same instance on subsequent calls.
-function getFirebaseServices(): FirebaseServices {
-    const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
-    
-    // In a client-side environment, we use initializeAuth to enable persistence.
-    // getAuth() is sufficient for server-side environments or if persistence is not needed.
-    const auth = typeof window !== 'undefined' 
-        ? initializeAuth(app, { persistence: browserLocalPersistence })
-        : getAuth(app);
-        
-    const db = getFirestore(app);
-    const storage = getStorage(app);
-    
-    return { app, auth, db, storage };
+db = getFirestore(app);
+storage = getStorage(app);
+
+// getAuth() is memoized, so it's safe to call it multiple times.
+// This function ensures that client-side auth uses persistence.
+export function getFirebaseAuth(): Auth {
+    if (auth) return auth;
+
+    if (typeof window === 'undefined') {
+        // For server-side rendering, use getAuth directly.
+        auth = getAuth(app);
+    } else {
+        // For client-side rendering, initialize with persistence.
+        // This is the key to fixing the auth issues.
+        auth = initializeAuth(app, {
+            persistence: browserLocalPersistence
+        });
+    }
+    return auth;
 }
 
-// Export a single, memoized instance of the Firebase services.
-// This ensures that Firebase is initialized only once and the same instance is used throughout the app.
-export const firebase = getFirebaseServices();
+// Simple getters for other services
+export function getFirebaseDb(): Firestore {
+    return db;
+}
+
+export function getFirebaseStorage(): FirebaseStorage {
+    return storage;
+}
+
+// Direct export for server-side usage where simple import is sufficient.
+export const firebase = {
+    app,
+    db,
+    storage,
+};
