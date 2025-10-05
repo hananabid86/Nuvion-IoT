@@ -9,7 +9,6 @@ import { CreateAutomationDialog } from './create-automation-dialog';
 import { addNotification } from '@/lib/notifications';
 import { collection, onSnapshot, query, doc, deleteDoc, setDoc } from 'firebase/firestore';
 import { getFirebaseDb } from '@/lib/firebase';
-import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
@@ -23,8 +22,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import { publishMqttCommand } from '@/actions/publish-mqtt-command';
 
+// Hardcoded user for development without auth
+const TEMP_USER_ID = "dev-user";
+
 export function AutomationsPage() {
-    const { user } = useAuth();
     const { toast } = useToast();
     const [automations, setAutomations] = useState<Automation[]>([]);
     const [devices, setDevices] = useState<Device[]>([]);
@@ -34,15 +35,11 @@ export function AutomationsPage() {
     const [isCreateOpen, setIsCreateOpen] = useState(false);
 
     useEffect(() => {
-        if (!user) {
-            setIsLoading(false);
-            return;
-        };
         setIsLoading(true);
 
         const db = getFirebaseDb();
-        const automationsQuery = query(collection(db, `users/${user.uid}/automations`));
-        const devicesQuery = query(collection(db, `users/${user.uid}/devices`));
+        const automationsQuery = query(collection(db, `users/${TEMP_USER_ID}/automations`));
+        const devicesQuery = query(collection(db, `users/${TEMP_USER_ID}/devices`));
 
         const unsubAutomations = onSnapshot(automationsQuery, (snapshot) => {
             const automationsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }) as Automation);
@@ -50,7 +47,7 @@ export function AutomationsPage() {
             setIsLoading(false);
         }, (error) => {
             console.error("Error fetching automations:", error);
-            toast({ title: "Error", description: "Could not fetch automations.", variant: "destructive" });
+            toast({ title: "Error", description: "Could not fetch automations. Is your Firestore database set up correctly?", variant: "destructive" });
             setIsLoading(false);
         });
 
@@ -64,13 +61,12 @@ export function AutomationsPage() {
             unsubAutomations();
             unsubDevices();
         };
-    }, [user, toast]);
+    }, [toast]);
 
     const handleSaveAutomation = async (automationToSave: Automation) => {
-        if (!user) return;
         const db = getFirebaseDb();
         try {
-            const automationRef = doc(db, `users/${user.uid}/automations`, automationToSave.id);
+            const automationRef = doc(db, `users/${TEMP_USER_ID}/automations`, automationToSave.id);
             await setDoc(automationRef, automationToSave, { merge: true });
             
             toast({
@@ -88,10 +84,10 @@ export function AutomationsPage() {
     };
     
     const confirmDeleteAutomation = async () => {
-        if (!automationToDelete || !user) return;
+        if (!automationToDelete) return;
         const db = getFirebaseDb();
         try {
-            await deleteDoc(doc(db, `users/${user.uid}/automations`, automationToDelete.id));
+            await deleteDoc(doc(db, `users/${TEMP_USER_ID}/automations`, automationToDelete.id));
             toast({
                 title: "Automation Deleted",
                 description: `The automation for '${automationToDelete.deviceName}' has been deleted.`,

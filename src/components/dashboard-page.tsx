@@ -14,8 +14,10 @@ import { getFirebaseDb } from '@/lib/firebase';
 import { useToast } from "@/hooks/use-toast";
 import { StatCard } from "./stat-card";
 import { useSearch } from "@/hooks/use-search";
-import { useAuth } from "@/hooks/use-auth";
 import { publishMqttCommand } from "@/actions/publish-mqtt-command";
+
+// Hardcoded user for development without auth
+const TEMP_USER_ID = "dev-user";
 
 function parseLastSeen(lastSeen: any): Date | null {
     if (!lastSeen) return null;
@@ -34,7 +36,6 @@ function parseLastSeen(lastSeen: any): Date | null {
 }
 
 export function DashboardPage() {
-  const { user } = useAuth();
   const [devices, setDevices] = useState<Device[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<FilterType>('all');
@@ -43,13 +44,8 @@ export function DashboardPage() {
 
   // This effect manages the real-time data subscription from Firestore
   useEffect(() => {
-    if (!user) {
-      setIsLoading(false);
-      return;
-    }
-    
     const db = getFirebaseDb();
-    const q = query(collection(db, `users/${user.uid}/devices`));
+    const q = query(collection(db, `users/${TEMP_USER_ID}/devices`));
     
     // Store the unsubscribe function returned by onSnapshot
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -76,16 +72,15 @@ export function DashboardPage() {
         setIsLoading(false);
     }, (error) => {
         console.error("Error with real-time listener:", error);
-        toast({ title: "Error", description: "Could not connect to real-time updates.", variant: "destructive" });
+        toast({ title: "Error", description: "Could not connect to real-time updates. Is your Firestore database set up correctly?", variant: "destructive" });
         setIsLoading(false);
     });
 
     // Cleanup subscription on component unmount
     return () => unsubscribe();
-  }, [user, toast]); // Removed `devices` from dependency array to prevent re-subscribing on every data change
+  }, [toast]); // Removed `devices` from dependency array to prevent re-subscribing on every data change
   
   const handleToggle = useCallback(async (deviceId: string, key: string, value: boolean) => {
-    if (!user) return;
     const device = devices.find(d => d.firestoreId === deviceId);
     if (!device) return;
 
@@ -114,14 +109,13 @@ export function DashboardPage() {
         console.error("Error sending command:", error);
         toast({ title: "Error", description: "Could not send command to device.", variant: "destructive" });
     }
-  }, [user, devices, toast]);
+  }, [devices, toast]);
   
   const handlePinToggle = useCallback(async (firestoreId: string) => {
-    if (!user) return;
     const db = getFirebaseDb();
     const device = devices.find(d => d.firestoreId === firestoreId);
     if (!device || !device.firestoreId) return;
-    const deviceRef = doc(db, `users/${user.uid}/devices`, device.firestoreId);
+    const deviceRef = doc(db, `users/${TEMP_USER_ID}/devices`, device.firestoreId);
      try {
         await updateDoc(deviceRef, { pinned: !device.pinned });
         addNotification(
@@ -132,7 +126,7 @@ export function DashboardPage() {
         console.error("Error pinning device:", error);
         toast({ title: "Error", description: "Could not pin/unpin device.", variant: "destructive" });
     }
-  }, [user, devices, toast]);
+  }, [devices, toast]);
 
   const stats = useMemo(() => {
     const online = devices.filter(d => d.online).length;

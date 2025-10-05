@@ -1,8 +1,7 @@
 
 "use client"
 import Link from 'next/link';
-import { User, LogOut, Bell, Trash2, Sun, Moon, HardDrive, Menu, CheckCircle } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Bell, Trash2, Sun, Moon, HardDrive, Menu, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -22,7 +21,9 @@ import { useTheme } from 'next-themes';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { getFirebaseDb } from '@/lib/firebase';
 import { SearchInput } from './search-input';
-import { useAuth } from '@/hooks/use-auth';
+
+// Hardcoded user for development without auth
+const TEMP_USER_ID = "dev-user";
 
 const ThemeToggleButton = () => {
     const { setTheme, theme } = useTheme();
@@ -44,22 +45,20 @@ const ThemeToggleButton = () => {
 
 export function Header() {
     const { toggleSidebar } = useAppState();
-    const { user, signOut } = useAuth();
     const [devices, setDevices] = useState<Device[]>([]);
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [showAllNotifications, setShowAllNotifications] = useState(false);
     
     // Listen for device changes from Firestore
     useEffect(() => {
-        if (!user) return;
         const db = getFirebaseDb();
-        const q = query(collection(db, `users/${user.uid}/devices`));
+        const q = query(collection(db, `users/${TEMP_USER_ID}/devices`));
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const devicesData = snapshot.docs.map(doc => doc.data() as Device);
             setDevices(devicesData);
         });
         return () => unsubscribe();
-    }, [user]);
+    }, []);
     
     // Listen for notification changes from our in-memory store
     useEffect(() => {
@@ -156,39 +155,6 @@ export function Header() {
                     </DropdownMenu>
                     
                     <ThemeToggleButton />
-
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="relative h-9 w-9 rounded-full">
-                                <Avatar className="h-9 w-9">
-                                    <AvatarImage src={user?.photoURL || "https://placehold.co/100x100.png"} alt="User Avatar" data-ai-hint="user avatar" />
-                                    <AvatarFallback>{user?.email?.[0]?.toUpperCase()}</AvatarFallback>
-                                </Avatar>
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent className="w-56" align="end" forceMount>
-                            <DropdownMenuLabel className="font-normal">
-                                <div className="flex flex-col space-y-1">
-                                    <p className="text-sm font-medium leading-none">{user?.displayName || 'IoT User'}</p>
-                                    <p className="text-xs leading-none text-muted-foreground">
-                                        {user?.email}
-                                    </p>
-                                </div>
-                            </DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem asChild>
-                                <Link href="/profile">
-                                    <User className="mr-2 h-4 w-4" />
-                                    <span>Profile</span>
-                                </Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={signOut}>
-                                <LogOut className="mr-2 h-4 w-4" />
-                                <span>Log out</span>
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
                 </div>
             </div>
         </header>

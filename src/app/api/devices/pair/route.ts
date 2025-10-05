@@ -1,6 +1,6 @@
 
 import { NextResponse, type NextRequest } from 'next/server';
-import { firebase } from '@/lib/firebase';
+import { getFirebaseDb } from '@/lib/firebase';
 import { collection, query, where, getDocs, doc, limit, writeBatch, collectionGroup } from 'firebase/firestore';
 import type { Device } from '@/lib/types';
 
@@ -8,7 +8,7 @@ const generateApiKey = () => `iotc_${crypto.randomUUID().replace(/-/g, '')}`;
 
 export async function POST(req: NextRequest) {
      try {
-        const { db } = firebase;
+        const db = getFirebaseDb();
         const { hardwareId, pairingToken } = await req.json();
 
         if (!hardwareId || !pairingToken) {
@@ -32,11 +32,8 @@ export async function POST(req: NextRequest) {
         
         const tokenDoc = tokenSnapshot.docs[0];
         const tokenData = tokenDoc.data();
-        const userId = tokenData.userId;
-
-        if (!userId) {
-             return NextResponse.json({ success: false, message: 'Pairing token is not associated with a user.' }, { status: 500 });
-        }
+        // Since we removed auth, we'll use the hardcoded user ID from the token if it exists, or the default.
+        const userId = tokenData.userId || "dev-user";
        
         // 2. Check if device hardware ID is already registered anywhere in the system
         const allDevicesQuery = query(collectionGroup(db, 'devices'), where('id', '==', hardwareId), limit(1));

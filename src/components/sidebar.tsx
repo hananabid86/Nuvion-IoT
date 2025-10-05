@@ -2,7 +2,7 @@
 "use client"
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Rss, LayoutDashboard, HardDrive, Sun, Moon, CheckCircle, User, ChevronLeft, X, AlertTriangle, Bot, Github } from 'lucide-react';
+import { Rss, LayoutDashboard, HardDrive, Sun, Moon, CheckCircle, ChevronLeft, X, AlertTriangle, Bot, Github } from 'lucide-react';
 import { useTheme } from "next-themes";
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -17,7 +17,9 @@ import {
 import { useAppState } from '@/hooks/use-app-state';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { getFirebaseDb } from '@/lib/firebase';
-import { useAuth } from '@/hooks/use-auth';
+
+// Hardcoded user for development without auth
+const TEMP_USER_ID = "dev-user";
 
 const ThemeToggleButton = () => {
     const { setTheme, theme } = useTheme();
@@ -41,19 +43,19 @@ const ThemeToggleButton = () => {
 export function Sidebar() {
     const pathname = usePathname();
     const { isSidebarOpen, isSidebarCollapsed, toggleSidebar, setSidebarCollapsed } = useAppState();
-    const { user } = useAuth();
     const [devices, setDevices] = useState<Device[]>([]);
 
     useEffect(() => {
-        if (!user) return;
         const db = getFirebaseDb();
-        const q = query(collection(db, `users/${user.uid}/devices`));
+        const q = query(collection(db, `users/${TEMP_USER_ID}/devices`));
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const devicesData = snapshot.docs.map(doc => doc.data() as Device);
             setDevices(devicesData);
+        }, (error) => {
+          console.error("Could not fetch devices for sidebar:", error);
         });
         return () => unsubscribe();
-    }, [user]);
+    }, []);
 
     useEffect(() => {
         const content = document.getElementById('content');
@@ -155,12 +157,6 @@ export function Sidebar() {
                         <h3 className={cn("font-medium text-sm pl-3", isSidebarCollapsed && "hidden")}>Theme</h3>
                         <ThemeToggleButton />
                     </div>
-                </div>
-                <div className={cn(
-                    "rounded-lg",
-                    !isSidebarCollapsed && "bg-sidebar-accent"
-                )}>
-                    <SidebarLink href="/profile" label="Profile" icon={User} isProfileLink={true} />
                 </div>
                  <div className="border-t pt-2">
                     <SidebarLink href="https://github.com/hananabid86/Nuvion-IoT" label="Developed by Hanan abid" icon={Github} external={true} />

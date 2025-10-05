@@ -43,9 +43,11 @@ import {
 import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, serverTimestamp, Timestamp, writeBatch } from 'firebase/firestore';
 import { getFirebaseDb } from '@/lib/firebase';
 import { useSearch } from '@/hooks/use-search';
-import { useAuth } from '@/hooks/use-auth';
 import { DeviceSetupGuide } from './device-setup-guide';
 import Link from 'next/link';
+
+// Hardcoded user for development without auth
+const TEMP_USER_ID = "dev-user";
 
 const generatePairingTokenValue = () => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -67,7 +69,6 @@ const formatTime = (seconds: number) => {
 
 
 export function DevicesPage() {
-    const { user } = useAuth();
     const [devices, setDevices] = useState<Device[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isGeneratingToken, setIsGeneratingToken] = useState(false);
@@ -88,13 +89,9 @@ export function DevicesPage() {
     const notifiedTokensRef = useRef<Set<string>>(new Set());
     
     useEffect(() => {
-        if (!user) {
-            setIsLoading(false);
-            return;
-        }
         setIsLoading(true);
         const db = getFirebaseDb();
-        const q = query(collection(db, `users/${user.uid}/devices`));
+        const q = query(collection(db, `users/${TEMP_USER_ID}/devices`));
         
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const devicesData = snapshot.docs.map(doc => ({
@@ -105,15 +102,14 @@ export function DevicesPage() {
             setIsLoading(false);
         }, (error) => {
             console.error("Error fetching devices:", error);
-            toast({ title: "Error", description: "Could not fetch devices.", variant: "destructive" });
+            toast({ title: "Error", description: "Could not fetch devices. Is your Firestore database set up correctly?", variant: "destructive" });
             setIsLoading(false);
         });
 
         return () => unsubscribe();
-    }, [user, toast]);
+    }, [toast]);
     
      useEffect(() => {
-        if (!user) return;
         const db = getFirebaseDb();
         const tokensQuery = query(collection(db, 'pairingTokens'));
 
@@ -123,7 +119,7 @@ export function DevicesPage() {
             
             snapshot.forEach(doc => {
                 const tokenData = doc.data();
-                if (tokenData.userId !== user.uid) return;
+                if (tokenData.userId !== TEMP_USER_ID) return;
 
                 // Notify user on successful pairing
                 if (tokenData.used && !notifiedTokensRef.current.has(doc.id)) {
@@ -140,7 +136,7 @@ export function DevicesPage() {
                         docId: doc.id,
                         token: tokenData.token,
                         expires: expiresDate.getTime(),
-                        userId: user.uid,
+                        userId: TEMP_USER_ID,
                         used: false,
                     };
                 }
@@ -152,7 +148,7 @@ export function DevicesPage() {
         });
 
         return () => unsubscribe();
-    }, [user, toast]);
+    }, [toast]);
 
     useEffect(() => {
         let timer: NodeJS.Timeout | null = null;
@@ -174,7 +170,6 @@ export function DevicesPage() {
     }, [activePairingToken]);
 
     const handleNewPairingToken = async () => {
-        if (!user) return;
         setIsGeneratingToken(true);
         const db = getFirebaseDb();
         const tokenValue = generatePairingTokenValue();
@@ -184,7 +179,7 @@ export function DevicesPage() {
             await addDoc(collection(db, 'pairingTokens'), {
                 token: tokenValue,
                 expires: Timestamp.fromDate(expires),
-                userId: user.uid,
+                userId: TEMP_USER_ID,
                 used: false,
             });
             toast({
@@ -212,22 +207,21 @@ export function DevicesPage() {
     };
     
     const handleSaveDevice = async (deviceToSave: Device) => {
-        if (!user) return;
         const db = getFirebaseDb();
         const batch = writeBatch(db);
         try {
             if (deviceToSave.firestoreId) {
-                const deviceRef = doc(db, `users/${user.uid}/devices`, deviceToSave.firestoreId);
+                const deviceRef = doc(db, `users/${TEMP_USER_ID}/devices`, deviceToSave.firestoreId);
                 const { firestoreId, ...deviceData } = deviceToSave;
                 batch.update(deviceRef, deviceData);
                 toast({ title: "Device Updated", description: `'${deviceToSave.name}' has been saved.` });
             } else { 
-                const newDeviceRef = doc(collection(db, `users/${user.uid}/devices`));
-                const newDeviceData = { ...deviceToSave, owner: user.uid, lastSeen: serverTimestamp(), online: false, history: [], pendingActions: {}, alertTriggered: {}, pinned: false };
+                const newDeviceRef = doc(collection(db, `users/${TEMP_USER_ID}/devices`));
+                const newDeviceData = { ...deviceToSave, owner: TEMP_USER_ID, lastSeen: serverTimestamp(), online: false, history: [], pendingActions: {}, alertTriggered: {}, pinned: false };
                 batch.set(newDeviceRef, newDeviceData);
                 const apiKeyRef = doc(db, 'apiKeys', deviceToSave.apiKey);
                 batch.set(apiKeyRef, { 
-                    userId: user.uid, 
+                    userId: TEMP_USER_ID, 
                     deviceId: newDeviceRef.id,
                     hardwareId: deviceToSave.id
                 });
@@ -248,11 +242,11 @@ export function DevicesPage() {
     };
 
     const confirmDeleteDevice = async () => {
-        if (!deviceToDelete || !deviceToDelete.firestoreId || !user) return;
+        if (!deviceToDelete || !deviceToDelete.firestoreId) return;
         const db = getFirebaseDb();
         const batch = writeBatch(db);
         try {
-            const deviceRef = doc(db, `users/${user.uid}/devices`, deviceToDelete.firestoreId);
+            const deviceRef = doc(db, `users/${TEMP_USER_ID}/devices`, deviceToDelete.firestoreId);
             batch.delete(deviceRef);
             if (deviceToDelete.apiKey) {
                 const apiKeyRef = doc(db, "apiKeys", deviceToDelete.apiKey);
@@ -268,7 +262,7 @@ export function DevicesPage() {
     };
     
     const confirmRegenerateKey = async () => {
-        if (!deviceToRegenerate || !deviceToRegenerate.firestoreId || !user) return;
+        if (!deviceToRegenerate || !deviceToRegenerate.firestoreId) return;
         
         const db = getFirebaseDb();
         const oldApiKey = deviceToRegenerate.apiKey;
@@ -278,7 +272,7 @@ export function DevicesPage() {
         
         try {
             // Update the device document with the new API key
-            const deviceRef = doc(db, `users/${user.uid}/devices`, deviceToRegenerate.firestoreId);
+            const deviceRef = doc(db, `users/${TEMP_USER_ID}/devices`, deviceToRegenerate.firestoreId);
             batch.update(deviceRef, { apiKey: newApiKey });
             
             // Delete the old API key lookup document
@@ -290,7 +284,7 @@ export function DevicesPage() {
             // Create the new API key lookup document
             const newApiKeyRef = doc(db, "apiKeys", newApiKey);
             batch.set(newApiKeyRef, {
-                userId: user.uid,
+                userId: TEMP_USER_ID,
                 deviceId: deviceToRegenerate.firestoreId,
                 hardwareId: deviceToRegenerate.id // Ensure hardwareId is stored
             });

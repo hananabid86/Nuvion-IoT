@@ -9,11 +9,9 @@ import { DeviceCard } from './device-card';
 import type { Device } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { ScrollProgressBar } from './scroll-progress-bar';
-import { useAuth } from '@/hooks/use-auth';
 
 export function LandingPage() {
   const { setTheme, theme } = useTheme();
-  const { user } = useAuth();
   const [mounted, setMounted] = useState(false);
   const [visitCount, setVisitCount] = useState(0);
   const [showScroll, setShowScroll] = useState(false);
@@ -141,20 +139,9 @@ export function LandingPage() {
                   </Link>
                    <nav className='flex items-center gap-2'>
                        <ThemeToggleButton />
-                       {user ? (
-                           <Button asChild>
-                               <Link href="/dashboard">Go to Dashboard <ArrowRight className="ml-2 h-4 w-4" /></Link>
-                           </Button>
-                       ) : (
-                           <>
-                               <Button asChild variant="ghost">
-                                   <Link href="/login">Log In</Link>
-                               </Button>
-                               <Button asChild>
-                                   <Link href="/signup">Sign Up <ArrowRight className="ml-2 h-4 w-4" /></Link>
-                               </Button>
-                           </>
-                       )}
+                       <Button asChild>
+                           <Link href="/dashboard">Go to Dashboard <ArrowRight className="ml-2 h-4 w-4" /></Link>
+                       </Button>
                   </nav>
               </div>
           </header>
@@ -170,9 +157,9 @@ export function LandingPage() {
                       A single platform with a real-time dashboard and secure API keys to manage and monitor all your IoT devices, from the edge to the cloud.
                   </p>
                   <div className="mt-8 flex flex-col sm:flex-row justify-center items-center gap-4">
-                       <Link href="/signup">
+                       <Link href="/dashboard">
                           <Button size="lg" className="shadow-lg shadow-primary/20 w-full sm:w-auto">
-                              Get Started For Free <ArrowRight className="ml-2 h-5 w-5" />
+                              View Dashboard <ArrowRight className="ml-2 h-5 w-5" />
                           </Button>
                       </Link>
                        <Link href="/devices">
@@ -318,9 +305,9 @@ export function LandingPage() {
                           Stop wrestling with infrastructure. Start building your connected product today.
                       </p>
                       <div className="mt-8">
-                           <Link href="/signup">
+                           <Link href="/dashboard">
                               <Button size="lg" className="shadow-lg shadow-primary/20">
-                                  Sign Up Now <ArrowRight className="ml-2 h-5 w-5" />
+                                  Go to Dashboard <ArrowRight className="ml-2 h-5 w-5" />
                               </Button>
                           </Link>
                       </div>
@@ -358,7 +345,7 @@ export function LandingPage() {
                     <p className="font-semibold text-foreground">Quick Links</p>
                     <Link href="/dashboard" className="text-muted-foreground hover:text-primary transition-colors">Dashboard</Link>
                     <Link href="/devices" className="text-muted-foreground hover:text-primary transition-colors">Connect Device</Link>
-                    <Link href="/signup" className="text-muted-foreground hover:text-primary transition-colors">Get Started</Link>
+                    <Link href="/dashboard" className="text-muted-foreground hover:text-primary transition-colors">Get Started</Link>
                 </div>
 
                 {/* Column 3: Developer Credit */}

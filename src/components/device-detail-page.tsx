@@ -14,8 +14,10 @@ import Link from 'next/link';
 import { Button } from './ui/button';
 import { onSnapshot, doc, Timestamp } from 'firebase/firestore';
 import { getFirebaseDb } from '@/lib/firebase';
-import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
+
+// Hardcoded user for development without auth
+const TEMP_USER_ID = "dev-user";
 
 const INACTIVITY_THRESHOLD = 60000; // 60 seconds
 
@@ -58,20 +60,19 @@ function parseLastSeen(lastSeen: any): Date | null {
 }
 
 export function DeviceDetailPage({ deviceId }: { deviceId: string }) {
-    const { user } = useAuth();
     const [device, setDevice] = useState<Device | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [deviceNotFound, setDeviceNotFound] = useState(false);
     const router = useRouter();
     
     useEffect(() => {
-        if (!deviceId || !user) {
-            setIsLoading(false); // Can't load if there's no user/ID
+        if (!deviceId) {
+            setIsLoading(false); // Can't load if there's no ID
             return;
         }
         
         const db = getFirebaseDb();
-        const deviceRef = doc(db, `users/${user.uid}/devices`, deviceId);
+        const deviceRef = doc(db, `users/${TEMP_USER_ID}/devices`, deviceId);
 
         const unsubscribe = onSnapshot(deviceRef, (doc) => {
             if (doc.exists()) {
@@ -100,7 +101,7 @@ export function DeviceDetailPage({ deviceId }: { deviceId: string }) {
         });
 
         return () => unsubscribe();
-    }, [deviceId, user]);
+    }, [deviceId]);
 
     const { chartData, chartConfig, numericKeys, booleanKeys } = useMemo(() => {
         if (!device?.history || !device.data) return { chartData: [], chartConfig: {}, numericKeys: [], booleanKeys: [] };
@@ -159,7 +160,7 @@ export function DeviceDetailPage({ deviceId }: { deviceId: string }) {
         return (
             <div className="text-center pt-20">
                 <h1 className="text-2xl font-bold">Device Not Found</h1>
-                <p className="text-muted-foreground">The device with this ID could not be found in your account.</p>
+                <p className="text-muted-foreground">The device with this ID could not be found.</p>
                 <Button asChild variant="link" className="mt-4" onClick={() => router.push('/dashboard')}>
                     <span>
                         <ArrowLeft className="mr-2 h-4 w-4" />

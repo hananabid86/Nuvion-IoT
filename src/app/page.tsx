@@ -2,7 +2,6 @@
 import { LandingPage } from "@/components/landing-page";
 
 export default function Home() {
-  // The AuthGuard and middleware now handle redirection for logged-in users,
-  // so this page can simply always render the landing page.
+  // With auth removed, this page always renders the public landing page.
   return <LandingPage />;
 }

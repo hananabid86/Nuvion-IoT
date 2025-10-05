@@ -27,7 +27,6 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrig
 import { cn } from '@/lib/utils';
 import { Switch } from './ui/switch';
 import { Separator } from './ui/separator';
-import { useAuth } from '@/hooks/use-auth';
 
 const generateApiKey = () => `iotc_${crypto.randomUUID().replace(/-/g, '')}`;
 
@@ -259,7 +258,6 @@ export function CreateDeviceDialog({
     onSave, 
     deviceToEdit, 
 }: CreateDeviceDialogProps) {
-    const { user } = useAuth();
     const [deviceName, setDeviceName] = useState('');
     const [hardwareId, setHardwareId] = useState('');
     const [variables, setVariables] = useState<DeviceVariable[]>([]);
@@ -314,7 +312,6 @@ export function CreateDeviceDialog({
     }, []);
 
     const saveDevice = () => {
-        if (!user) return;
         if (!deviceName.trim() || !hardwareId.trim()) {
             toast({ title: "Error", description: "Device Name and Hardware ID cannot be empty.", variant: "destructive" });
             return;
@@ -368,7 +365,7 @@ export function CreateDeviceDialog({
                 apiKey: generateApiKey(),
                 online: false,
                 data: deviceData,
-                owner: user.uid,
+                owner: "dev-user", // Hardcoded user for development without auth
                 history: [],
                 pendingActions: {},
                 alertTriggered: {},
