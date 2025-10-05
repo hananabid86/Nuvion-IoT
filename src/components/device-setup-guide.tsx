@@ -45,7 +45,7 @@ const CodeBlock = ({ children, language = 'cpp' }: { children: React.ReactNode, 
 const arduinoPnpCode = (hostname: string) => `
 /*
  * =================================================================
- * Nuvion IoT - ESP32 MQTT Plug & Play - v2.1
+ * Nuvion IoT - ESP32 MQTT Plug & Play - v2.2
  * =================================================================
  * This code provides a complete one-shot provisioning process.
  *
@@ -53,12 +53,12 @@ const arduinoPnpCode = (hostname: string) => `
  * 1. It first connects to your WiFi.
  * 2. It uses a temporary Pairing Token to talk to the platform
  *    over HTTPS and securely fetch a permanent API Key.
- * 3. It then immediately uses that new API Key to connect to your
- *    own Mosquitto MQTT broker and starts sending data.
+ * 3. It then immediately uses that new API Key to connect to the
+ *    public HiveMQ MQTT broker and starts sending data.
  *
  * INSTRUCTIONS:
  * 1. Update the "USER CONFIGURATION" section below with your
- *    WiFi and Mosquitto broker details.
+ *    WiFi details.
  * 2. Upload this code to your ESP32.
  * 3. Open the Serial Monitor (baud rate 115200).
  * 4. When prompted, enter the Pairing Token from the dashboard.
@@ -80,12 +80,10 @@ const arduinoPnpCode = (hostname: string) => `
 const char* WIFI_SSID = "YOUR_WIFI_SSID";
 const char* WIFI_PASS = "YOUR_WIFI_PASSWORD";
 
-// --- Mosquitto Broker Configuration ---
-// Your Mosquitto broker's IP address or domain name
-const char* MQTT_BROKER = "YOUR_MQTT_BROKER_IP_OR_DOMAIN"; 
-const int   MQTT_PORT   = 1883; // Or 8883 for TLS/SSL
-const char* MQTT_USER   = "YOUR_MQTT_USERNAME";
-const char* MQTT_PASS   = "YOUR_MQTT_PASSWORD";
+// --- MQTT Broker Configuration ---
+// We are using the free, public HiveMQ broker. No credentials needed.
+const char* MQTT_BROKER = "broker.hivemq.com"; 
+const int   MQTT_PORT   = 1883;
 
 // --- Platform Configuration ---
 // This is the hostname of your deployed dashboard application
@@ -144,12 +142,12 @@ void mqtt_callback(char* topic, byte* payload, unsigned int length) {
 }
 
 boolean mqtt_reconnect() {
-  Serial.print("Attempting MQTT connection to Mosquitto broker...");
+  Serial.print("Attempting MQTT connection to HiveMQ broker...");
   
   String clientId = "esp32-client-";
   clientId += String(random(0xffff), HEX);
   
-  if (mqttClient.connect(clientId.c_str(), MQTT_USER, MQTT_PASS)) {
+  if (mqttClient.connect(clientId.c_str())) {
     Serial.println("connected!");
     delay(1000);
     mqttClient.subscribe(command_topic);
@@ -196,6 +194,11 @@ bool pairDevice(String token) {
   
   String serverUrl = "https://" + String(SERVER_HOSTNAME) + "/api/devices/pair";
 
+  // The ESP32's root CA certificate store is often outdated.
+  // For this example, we skip certificate validation.
+  // For production, use client.setCACert() with your server's root CA.
+  client.setInsecure();
+  
   http.begin(client, serverUrl);
   http.addHeader("Content-Type", "application/json");
 
@@ -219,7 +222,7 @@ bool pairDevice(String token) {
       Serial.println("---- SUCCESS! ----");
       Serial.print("Received API Key: ");
       Serial.println(apiKey);
-      Serial.println("Device is now paired. Proceeding to connect to Mosquitto broker.");
+      Serial.println("Device is now paired. Proceeding to connect to MQTT broker.");
       http.end();
       return true;
     }
@@ -238,7 +241,7 @@ void setup() {
   Serial.begin(115200);
   pinMode(LED_PIN, OUTPUT);
   delay(1000);
-  Serial.println("\\n\\n--- Nuvion IoT PnP Setup for Mosquitto ---");
+  Serial.println("\\n\\n--- Nuvion IoT PnP Setup for HiveMQ ---");
 
   // 1. Connect to WiFi
   WiFi.mode(WIFI_STA);
@@ -298,7 +301,7 @@ void loop() {
     char output[256];
     serializeJson(doc, output);
     
-    Serial.print("Publishing message to Mosquitto: ");
+    Serial.print("Publishing message to HiveMQ: ");
     Serial.println(output);
     mqttClient.publish(data_topic, output);
   }
@@ -360,14 +363,12 @@ def pair_device():
             config_data = {
                 "api_key": api_key, 
                 "device_id": HARDWARE_ID,
-                "mqtt_broker": "YOUR_MQTT_BROKER_IP_OR_DOMAIN",
-                "mqtt_port": 1883,
-                "mqtt_user": "YOUR_MQTT_USERNAME",
-                "mqtt_pass": "YOUR_MQTT_PASSWORD"
+                "mqtt_broker": "broker.hivemq.com",
+                "mqtt_port": 1883
             }
             with open("device_config.json", "w") as f:
                 json.dump(config_data, f, indent=4)
-            print("API Key and Mosquitto placeholders saved to device_config.json")
+            print("API Key and broker details saved to device_config.json")
             print("IMPORTANT: You can now run your main application script.")
             return config_data
 
@@ -396,10 +397,10 @@ if __name__ == "__main__":
 const arduinoManualCode = (apiKey: string) => `
 /* 
  * ===================================================================
- * Nuvion IoT - Mosquitto MQTT Example (ESP32) - v2.0
+ * Nuvion IoT - MQTT Example for HiveMQ (ESP32) - v2.1
  * ===================================================================
  * This example demonstrates:
- * 1. Connecting to a self-hosted Mosquitto MQTT broker.
+ * 1. Connecting to the public HiveMQ MQTT broker.
  * 2. Publishing sensor data every 10 seconds.
  * 3. Subscribing to a command topic to receive actions.
  *
@@ -419,11 +420,10 @@ const arduinoManualCode = (apiKey: string) => `
 const char* WIFI_SSID = "YOUR_WIFI_SSID";
 const char* WIFI_PASS = "YOUR_WIFI_PASSWORD";
 
-// --- Mosquitto Broker Configuration ---
-const char* MQTT_BROKER = "YOUR_MQTT_BROKER_IP_OR_DOMAIN"; 
-const int   MQTT_PORT   = 1883; // Or 8883 for TLS/SSL
-const char* MQTT_USER   = "YOUR_MQTT_USERNAME";
-const char* MQTT_PASS   = "YOUR_MQTT_PASSWORD";
+// --- MQTT Broker Configuration ---
+// We are using the free, public HiveMQ broker. No credentials needed.
+const char* MQTT_BROKER = "broker.hivemq.com"; 
+const int   MQTT_PORT   = 1883;
 
 // --- Device Configuration ---
 const char* API_KEY   = "${apiKey}"; 
@@ -475,12 +475,12 @@ void callback(char* topic, byte* payload, unsigned int length) {
 }
 
 boolean reconnect() {
-  Serial.print("Attempting MQTT connection to Mosquitto...");
+  Serial.print("Attempting MQTT connection to HiveMQ...");
   
   String clientId = "esp32-client-";
   clientId += String(random(0xffff), HEX);
   
-  if (mqttClient.connect(clientId.c_str(), MQTT_USER, MQTT_PASS)) {
+  if (mqttClient.connect(clientId.c_str())) {
     Serial.println("connected");
     delay(1000);
     mqttClient.subscribe(command_topic);
@@ -559,7 +559,7 @@ void loop() {
     char output[256];
     serializeJson(doc, output);
     
-    Serial.print("Publishing message to Mosquitto: ");
+    Serial.print("Publishing message to HiveMQ: ");
     Serial.println(output);
     mqttClient.publish(data_topic, output);
   }
@@ -578,17 +578,16 @@ try:
     with open("device_config.json", "r") as f:
         config = json.load(f)
 except FileNotFoundError:
-    print("Error: device_config.json not found.")
-    print("Please run the Plug & Play script first or create the file manually with your credentials.")
-    sys.exit(1)
+    print("Warning: device_config.json not found. Using defaults from this script.")
+    config = {}
 
-# --- Configuration loaded from file ---
+# --- Configuration ---
+# Uses config file if found, otherwise uses hardcoded values.
 API_KEY = config.get("api_key", "${apiKey}")
 DEVICE_ID = config.get("device_id", "YOUR_UNIQUE_DEVICE_ID")
-MQTT_BROKER = config.get("mqtt_broker", "YOUR_MQTT_BROKER_IP_OR_DOMAIN")
+MQTT_BROKER = config.get("mqtt_broker", "broker.hivemq.com")
 MQTT_PORT = config.get("mqtt_port", 1883)
-MQTT_USER = config.get("mqtt_user", "YOUR_MQTT_USERNAME")
-MQTT_PASS = config.get("mqtt_pass", "YOUR_MQTT_PASSWORD")
+
 
 # --- MQTT Topics ---
 DATA_TOPIC = f"devices/{DEVICE_ID}/data"
@@ -599,7 +598,7 @@ COMMAND_TOPIC = f"devices/{DEVICE_ID}/commands"
 # The callback for when the client receives a CONNACK response from the server.
 def on_connect(client, userdata, flags, rc, properties=None):
     if rc == 0:
-        print(f"Connected to Mosquitto Broker: {MQTT_BROKER}")
+        print(f"Connected to MQTT Broker: {MQTT_BROKER}")
         client.subscribe(COMMAND_TOPIC)
         print(f"Subscribed to topic: {COMMAND_TOPIC}")
     else:
@@ -636,15 +635,11 @@ def publish_data(client):
         print(f"Failed to send message to topic {DATA_TOPIC}")
 
 if __name__ == "__main__":
-    if not all([API_KEY, DEVICE_ID, MQTT_BROKER, MQTT_PORT]):
-        print("Configuration is missing from device_config.json. Please check the file.")
+    if "YOUR_UNIQUE_DEVICE_ID" in DEVICE_ID or "your_api_key" in API_KEY:
+        print("ERROR: Please update DEVICE_ID and API_KEY in this script or in the device_config.json file.")
         sys.exit(1)
 
     client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id=f"py-client-{random.randint(0, 1000)}")
-    
-    if MQTT_USER and MQTT_PASS:
-        client.username_pw_set(MQTT_USER, MQTT_PASS)
-        
     client.on_connect = on_connect
     client.on_message = on_message
 
@@ -770,7 +765,7 @@ export function DeviceSetupGuide({ open, onOpenChange, mode, onGenerateToken, is
             description: "Use the Arduino Serial Monitor to send credentials directly to your device. This is the most reliable method for initial setup.",
             content: (
                  <div className='w-full'>
-                    <p className="text-sm text-muted-foreground mb-4 text-center">This code will connect to your WiFi, use the token to get an API key, then immediately connect to your Mosquitto broker.</p>
+                    <p className="text-sm text-muted-foreground mb-4 text-center">This code will connect to your WiFi, use the token to get an API key, then immediately connect to the public HiveMQ MQTT broker.</p>
 
                     {pairingToken && (
                         <Card className="p-4 rounded-lg bg-green-500/10 border-green-500/20 mb-4 max-w-md mx-auto">
@@ -804,10 +799,10 @@ export function DeviceSetupGuide({ open, onOpenChange, mode, onGenerateToken, is
         {
             icon: CheckCircle,
             title: "Step 3: Device is Online!",
-            description: "Your device is now registered and connected to your Mosquitto broker.",
+            description: "Your device is now registered and connected to the public MQTT broker.",
             content: (
                  <div className="text-center p-6 border-2 border-dashed rounded-lg bg-background w-full">
-                    <p>The previous step provisioned your device with a permanent <b className='text-primary'>API Key</b> and connected it to your broker.</p>
+                    <p>The previous step provisioned your device with a permanent <b className='text-primary'>API Key</b> and connected it to the broker.</p>
                     <p className='mt-4'>The device is automatically created with a default 'Smart Light' profile. You should now see it on your dashboard sending data.</p>
                     <p className="mt-4 text-sm text-muted-foreground">You can edit the device's profile (name, variables, icons, etc.) from the devices list at any time to match your hardware.</p>
                 </div>
@@ -818,18 +813,16 @@ export function DeviceSetupGuide({ open, onOpenChange, mode, onGenerateToken, is
     const ManualSteps = [
         {
             icon: MessageSquareQuote,
-            title: "Step 1: Get Mosquitto Broker Credentials",
-            description: "This platform uses your self-hosted Mosquitto broker. You must have it running and accessible.",
+            title: "Step 1: Use the Public Broker",
+            description: "This platform uses the free, public HiveMQ MQTT broker. No credentials are required.",
             content: (
                  <div className="text-center w-full max-w-lg mx-auto">
-                    <p className='text-muted-foreground'>To connect your devices, you need your Mosquitto broker's details:</p>
+                    <p className='text-muted-foreground'>To connect your devices, you need these details:</p>
                      <ul className='text-primary my-4 font-semibold list-inside list-disc text-left ml-4'>
-                        <li>Broker URL or IP Address</li>
-                        <li>Broker Port (e.g., 1883 or 8883 for SSL)</li>
-                        <li>Broker Username</li>
-                        <li>Broker Password</li>
+                        <li>Broker URL: broker.hivemq.com</li>
+                        <li>Broker Port: 1883</li>
                      </ul>
-                    <p className="text-sm text-muted-foreground">The code examples are pre-filled with placeholders that you must replace with your own broker's credentials.</p>
+                    <p className="text-sm text-muted-foreground">The code examples are pre-filled with these details. No username or password is necessary.</p>
                 </div>
             )
         },
@@ -850,8 +843,8 @@ export function DeviceSetupGuide({ open, onOpenChange, mode, onGenerateToken, is
         },
         {
             icon: Lightbulb,
-            title: "Step 3: Flash Mosquitto Firmware",
-            description: "Use the API Key and Mosquitto credentials to connect your device and start sending data.",
+            title: "Step 3: Flash Firmware with Credentials",
+            description: "Use the API Key and Device ID to connect your device and start sending data.",
             content: (
                  <div className='w-full'>
                      <p className="text-sm text-muted-foreground mb-4 text-center">Your device will publish data to <code className='font-mono text-xs bg-muted p-1 rounded'>devices/YOUR_DEVICE_ID/data</code> and listen for commands on <code className='font-mono text-xs bg-muted p-1 rounded'>devices/YOUR_DEVICE_ID/commands</code>.</p>
@@ -861,11 +854,11 @@ export function DeviceSetupGuide({ open, onOpenChange, mode, onGenerateToken, is
                             <TabsTrigger value="python">Python</TabsTrigger>
                         </TabsList>
                         <TabsContent value="arduino">
-                            <p className="text-xs text-muted-foreground mb-2">Edit the "USER CONFIGURATION" section in the code with your credentials, then flash to your device.</p>
+                            <p className="text-xs text-muted-foreground mb-2">Edit the "USER CONFIGURATION" section in the code with your WiFi, API Key, and Device ID, then flash to your device.</p>
                             <CodeContent getCode={arduinoManualCode} lang="cpp" />
                         </TabsContent>
                         <TabsContent value="python">
-                             <p className="text-xs text-muted-foreground mb-2">Create a `device_config.json` file with your credentials, or run the Plug & Play script first.</p>
+                             <p className="text-xs text-muted-foreground mb-2">Update the script with your API Key and Device ID, or use a `device_config.json` file.</p>
                              <CodeContent getCode={() => ""} getPythonCode={pythonManualCode} lang="python" />
                         </TabsContent>
                     </Tabs>

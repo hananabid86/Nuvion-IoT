@@ -9,6 +9,8 @@ const commandSchema = z.object({
   command: z.record(z.any()),
 });
 
+const brokerUrl = 'mqtt://broker.hivemq.com';
+
 // This action connects to the MQTT broker and publishes a command.
 // It's a server action, so it runs securely on the server.
 export async function publishMqttCommand(
@@ -22,29 +24,11 @@ export async function publishMqttCommand(
 
   const { deviceId, command } = validation.data;
 
-  const brokerUrl = process.env.MQTT_BROKER_URL;
-  const username = process.env.MQTT_USERNAME;
-  const password = process.env.MQTT_PASSWORD;
-
-  if (!brokerUrl) {
-    console.error('MQTT_BROKER_URL is not set.');
-    return { success: false, error: 'MQTT broker is not configured.' };
-  }
-
   const options: mqtt.IClientOptions = {
     clientId: `server-action-${Date.now()}`,
     reconnectPeriod: 1000, // Try to reconnect every second
   };
   
-  // Only add credentials if they exist
-  if (username) {
-    options.username = username;
-  }
-  if (password) {
-    options.password = password;
-  }
-
-
   try {
     console.log(`Connecting to MQTT broker at ${brokerUrl} to publish a command...`);
     const client = await mqtt.connectAsync(brokerUrl, options);
