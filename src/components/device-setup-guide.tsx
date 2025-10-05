@@ -45,7 +45,7 @@ const CodeBlock = ({ children, language = 'cpp' }: { children: React.ReactNode, 
 const arduinoPnpCode = (hostname: string) => `
 /*
  * =================================================================
- * Nuvion IoT - ESP32 MQTT Plug & Play - v2.0
+ * Nuvion IoT - ESP32 MQTT Plug & Play - v2.1
  * =================================================================
  * This code provides a complete one-shot provisioning process.
  *
@@ -193,7 +193,6 @@ bool pairDevice(String token) {
   
   HTTPClient http;
   WiFiClientSecure client;
-  client.setInsecure(); // Bypass certificate validation for simplicity
   
   String serverUrl = "https://" + String(SERVER_HOSTNAME) + "/api/devices/pair";
 
@@ -927,3 +926,5 @@ export function DeviceSetupGuide({ open, onOpenChange, mode, onGenerateToken, is
         </Dialog>
     )
 }
+
+    

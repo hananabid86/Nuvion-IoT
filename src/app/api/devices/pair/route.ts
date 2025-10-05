@@ -8,12 +8,15 @@ const generateApiKey = () => `iotc_${crypto.randomUUID().replace(/-/g, '')}`;
 
 export async function POST(req: NextRequest) {
      try {
+        console.log("Pairing request received.");
         const db = getFirebaseDb();
         const { hardwareId, pairingToken } = await req.json();
 
         if (!hardwareId || !pairingToken) {
+            console.log("Pairing failed: Missing hardwareId or pairingToken.");
             return NextResponse.json({ success: false, message: 'Missing hardwareId or pairingToken.' }, { status: 400 });
         }
+        console.log(`Attempting to pair device: ${hardwareId} with token: ${pairingToken}`);
 
         // 1. Validate Pairing Token
         const tokensRef = collection(db, 'pairingTokens');
@@ -27,24 +30,27 @@ export async function POST(req: NextRequest) {
         const tokenSnapshot = await getDocs(tokenQuery);
 
         if (tokenSnapshot.empty) {
+            console.log(`Pairing failed for ${hardwareId}: Invalid or expired token.`);
             return NextResponse.json({ success: false, message: 'Invalid or expired pairing token.' }, { status: 403 });
         }
         
         const tokenDoc = tokenSnapshot.docs[0];
         const tokenData = tokenDoc.data();
-        // Since we removed auth, we'll use the hardcoded user ID from the token if it exists, or the default.
         const userId = tokenData.userId || "dev-user";
+        console.log(`Found valid token for user ${userId}.`);
        
         // 2. Check if device hardware ID is already registered anywhere in the system
         const allDevicesQuery = query(collectionGroup(db, 'devices'), where('id', '==', hardwareId), limit(1));
         const allDevicesSnapshot = await getDocs(allDevicesQuery);
         
         if (!allDevicesSnapshot.empty) {
+             console.log(`Pairing failed for ${hardwareId}: Already registered.`);
              return NextResponse.json({
                 success: false,
                 message: 'This hardware is already registered to an account.'
             }, { status: 409 });
         }
+        console.log(`Hardware ID ${hardwareId} is new.`);
 
         // 3. Create a new device with a default profile
         const newApiKey = generateApiKey();
@@ -87,6 +93,8 @@ export async function POST(req: NextRequest) {
         batch.update(pairingTokenDocRef, { used: true });
 
         await batch.commit();
+        
+        console.log(`Pairing SUCCESS for ${hardwareId}. New device ID: ${newDeviceRef.id}.`);
 
         return NextResponse.json({
             success: true,
@@ -99,3 +107,5 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, message: `An unexpected server error occurred: ${error.message}` }, { status: 500 });
     }
 }
+
+    
